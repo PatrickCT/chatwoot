@@ -33,7 +33,7 @@ class DataImports::Freshdesk::Importer < DataImports::Importer
   end
 
   def verify_ticket_history_complete!(response)
-    raise DataImports::Freshdesk::TicketLimitError if response.dig('pages', 'limit_reached')
+    raise CustomExceptions::DataImport::FreshdeskTicketLimitError if response.dig('pages', 'limit_reached')
   end
 
   def import_conversation_summaries(response)
