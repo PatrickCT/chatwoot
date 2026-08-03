@@ -43,6 +43,12 @@ const TREE_VERTICAL_LINE =
   "before:content-[''] before:absolute before:-top-1 before:w-0.5 before:bg-n-slate-4 before:start-[-0.5rem]";
 const TREE_ELBOW =
   "after:content-[''] after:absolute after:w-2.5 after:h-3 after:bottom-1/2 after:start-[-0.5rem] after:border-b-2 after:border-s-2 after:rounded-es after:border-n-slate-4";
+
+// Mismo tono claro que usan las hojas (SidebarGroupLeaf) — los subgrupos
+// (ej. "Canales", "Etiquetas" dentro de Conversaciones) también cuentan
+// como "subelementos" del grupo.
+const SEPARATOR_ICON_COLOR =
+  'text-[color-mix(in_srgb,var(--sidebar-group-color,currentColor)_35%,white)]';
 </script>
 
 <template>
@@ -68,7 +74,12 @@ const TREE_ELBOW =
       @click.stop="collapsible ? emit('toggle') : undefined"
     >
       <div class="inline-flex min-w-0 items-center gap-2">
-        <Icon v-if="icon" :icon="icon" class="size-4 flex-shrink-0" />
+        <Icon
+          v-if="icon"
+          :icon="icon"
+          class="size-4 flex-shrink-0"
+          :class="SEPARATOR_ICON_COLOR"
+        />
         <span
           class="flex-grow truncate text-start text-sm font-medium leading-5"
         >

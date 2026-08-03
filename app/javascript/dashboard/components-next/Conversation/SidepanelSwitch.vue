@@ -64,9 +64,9 @@ useKeyboardEvents(keyboardEvents);
       ghost
       slate
       sm
-      class="!rounded-full transition-all duration-[250ms] ease-out active:!scale-95 active:!brightness-105 active:duration-75"
+      class="!rounded-full !text-[#25D366] !outline-[#25D366]/40 transition-all duration-[250ms] ease-out active:!scale-95 active:!brightness-105 active:duration-75"
       :class="{
-        'bg-n-alpha-2 active:shadow-sm': isContactSidebarOpen,
+        'bg-[#25D366]/10 !outline-[#25D366] active:shadow-sm': isContactSidebarOpen,
       }"
       icon="i-ph-user-bold"
       @click="handleConversationSidebarToggle"

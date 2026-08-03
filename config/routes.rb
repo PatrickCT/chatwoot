@@ -433,6 +433,14 @@ Rails.application.routes.draw do
           end
 
           resources :upload, only: [:create]
+
+          # new resource
+          resource :evolution_integration, only: [], controller: 'evolution_integration' do
+            post :create_instance
+            get :connection_state
+            post :link_to_chatwoot
+            get :refresh_qr
+          end
         end
       end
       # end of account scoped api routes

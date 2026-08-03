@@ -148,9 +148,11 @@ onUnmounted(() => {
         {{ $t('BULK_ACTION.ALL_CONVERSATIONS_SELECTED_ALERT') }}
       </div>
       <div
-        class="flex items-center justify-between p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
+        class="flex flex-wrap items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
       >
-        <div class="ltr:ml-0.5 rtl:mr-0.5 flex items-center gap-1">
+        <div
+          class="ltr:ml-0.5 rtl:mr-0.5 flex items-center gap-1 flex-wrap min-w-0"
+        >
           <label class="cursor-pointer flex items-center gap-1.5">
             <Checkbox
               v-model="allSelected"
@@ -166,14 +168,15 @@ onUnmounted(() => {
           </label>
           <div class="w-px h-3 bg-n-weak rounded-lg ltr:ml-1 rtl:mr-1" />
           <NextButton
+            v-tooltip="$t('BULK_ACTION.CLEAR_SELECTION')"
             :label="$t('BULK_ACTION.CLEAR_SELECTION')"
             ghost
-            class="!text-n-blue-11 !px-1 !h-6"
+            class="!text-n-blue-11 !px-1 !h-6 whitespace-nowrap"
             sm
             @click="allSelected = false"
           />
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <BulkLabelActions @assign="onAssignLabels" />
           <BulkLabelActions
             action="remove"

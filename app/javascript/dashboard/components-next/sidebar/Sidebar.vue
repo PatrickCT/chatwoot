@@ -370,6 +370,7 @@ const menuItems = computed(() => {
       getterKeys: {
         count: 'notifications/getUnreadCount',
       },
+      color: '#64748B',
     },
     {
       name: 'Conversation',
@@ -491,6 +492,7 @@ const menuItems = computed(() => {
           })),
         },
       ],
+      color: '#2563EB',
     },
     {
       name: 'Captain',
@@ -570,6 +572,7 @@ const menuItems = computed(() => {
           }),
         },
       ],
+      color: '#8B5CF6',
     },
     ...(isCallsAvailable.value
       ? [
@@ -579,6 +582,7 @@ const menuItems = computed(() => {
             icon: 'i-lucide-phone',
             to: accountScopedRoute('calls_dashboard_index'),
             activeOn: ['calls_dashboard_index'],
+            color: '#F59E0B',
           },
         ]
       : []),
@@ -648,6 +652,7 @@ const menuItems = computed(() => {
           })),
         },
       ],
+      color: '#25D366',
     },
     {
       name: 'Companies',
@@ -665,6 +670,7 @@ const menuItems = computed(() => {
           activeOn: ['companies_dashboard_index', 'companies_dashboard_show'],
         },
       ],
+      color: '#06B6D4',
     },
     {
       name: 'Reports',
@@ -698,6 +704,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('bot_reports'),
         },
       ],
+      color: '#EC4899',
     },
     {
       name: 'Campaigns',
@@ -720,6 +727,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('campaigns_whatsapp_index'),
         },
       ],
+      color: '#F97316',
     },
     {
       name: 'Portals',
@@ -767,6 +775,7 @@ const menuItems = computed(() => {
           }),
         },
       ],
+      color: '#6366F1',
     },
     {
       name: 'Settings',
@@ -929,6 +938,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('billing_settings_index'),
         },
       ],
+      color: '#14B8A6',
     },
   ];
 });

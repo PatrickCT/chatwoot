@@ -1,14 +1,15 @@
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import { frontendURL } from '../../../../helper/URLHelper';
 import SettingsWrapper from '../SettingsWrapper.vue';
-import IntegrationHooks from './IntegrationHooks.vue';
-import Index from './Index.vue';
-import Webhook from './Webhooks/Index.vue';
 import DashboardApps from './DashboardApps/Index.vue';
-import Slack from './Slack.vue';
+import EvolutionApi from './EvolutionApi.vue';
+import Index from './Index.vue';
+import IntegrationHooks from './IntegrationHooks.vue';
 import Linear from './Linear.vue';
 import Notion from './Notion.vue';
 import Shopify from './Shopify.vue';
+import Slack from './Slack.vue';
+import Webhook from './Webhooks/Index.vue';
 
 export default {
   routes: [
@@ -99,6 +100,14 @@ export default {
           props: route => ({
             integrationId: route.params.integration_id,
           }),
+        },
+        {
+          path: 'evolution_api',
+          name: 'settings_integrations_evolution_api',
+          component: EvolutionApi,
+          meta: {
+            permissions: ['administrator'],
+          },
         },
       ],
     },

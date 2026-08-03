@@ -18,7 +18,16 @@ const props = defineProps({
   activeOn: { type: Array, default: () => [] },
   children: { type: Array, default: undefined },
   getterKeys: { type: Object, default: () => ({}) },
+  // Color del grupo (hex). Se expone como variable CSS en el elemento raíz
+  // de este componente — todos los descendientes (subgrupos, hojas) heredan
+  // esa variable automáticamente por CSS, sin que nadie tenga que
+  // reenviarla explícitamente por props en cada nivel.
+  color: { type: String, default: null },
 });
+
+const groupStyle = computed(() =>
+  props.color ? { '--sidebar-group-color': props.color } : undefined
+);
 
 const {
   expandedItem,
@@ -51,12 +60,9 @@ const hasChildren = computed(
   () => Array.isArray(props.children) && props.children.length > 0
 );
 
-// Use shared popover state - only one popover can be open at a time
 const isPopoverOpen = computed(() => activePopover.value === props.name);
 const triggerRef = ref(null);
 const triggerRect = ref({ top: 0, left: 0, bottom: 0, right: 0 });
-// The sort dropdown teleports outside the popover; keep the popover open while
-// it is showing so moving the cursor onto it does not close everything.
 const isSortMenuOpen = ref(false);
 
 const openPopover = () => {
@@ -103,7 +109,6 @@ const handleSortToggle = isOpen => {
   cancelClose();
 };
 
-// Close popover when mouse leaves the window
 const handleWindowBlur = () => {
   closeActivePopover();
 };
@@ -151,20 +156,12 @@ const isActive = computed(() => {
   return false;
 });
 
-// We could use the RouterLink isActive too, but our routes are not always
-// nested correctly, so we need to check the active state ourselves
-// TODO: Audit the routes and fix the nesting and remove this
 const activeChild = computed(() => {
   const pathSame = navigableChildren.value.find(
     child => child.to && route.path === resolvePath(child.to)
   );
   if (pathSame) return pathSame;
 
-  // Rank the activeOn Prop higher than the path match
-  // There will be cases where the path name is the same but the params are different
-  // So we need to rank them based on the params
-  // For example, contacts segment list in the sidebar effectively has the same name
-  // But the params are different
   const activeOnPages = navigableChildren.value.filter(child =>
     child.activeOn?.includes(route.name)
   );
@@ -178,11 +175,6 @@ const activeChild = computed(() => {
         .every(match => match);
     });
 
-    // If there is no ranked page, return the first activeOn page anyway
-    // Since this takes higher precedence over the path match
-    // This is not perfect, ideally we should rank each route based on all the techniques
-    // and then return the highest ranked one
-    // But this is good enough for now
     return rankedPage ?? activeOnPages[0];
   }
 
@@ -210,7 +202,6 @@ const toggleTrigger = () => {
     !isExpanded.value &&
     !hasActiveChild.value
   ) {
-    // if not already expanded, navigate to the first child
     const firstItem = accessibleItems.value[0];
     router.push(firstItem.to);
   }
@@ -250,6 +241,7 @@ watch(
     :feature-flag="resolveFeatureFlag(to)"
     as="li"
     class="grid gap-1 text-sm cursor-pointer select-none min-w-0"
+    :style="groupStyle"
   >
     <!-- Collapsed State -->
     <template v-if="isCollapsed">
@@ -271,7 +263,12 @@ watch(
           :title="label"
           @click="hasChildren ? handleCollapsedClick() : undefined"
         >
-          <Icon v-if="icon" :icon="icon" class="size-4" />
+          <Icon
+            v-if="icon"
+            :icon="icon"
+            class="size-4"
+            :class="color && 'text-[var(--sidebar-group-color)]'"
+          />
         </component>
         <SidebarCollapsedPopover
           v-if="hasChildren && isPopoverOpen"

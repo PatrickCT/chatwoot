@@ -26,6 +26,12 @@ const shouldRenderComponent = computed(() => {
 // last child (::after). Logical props (start / border-s / rounded-es)
 const TREE_CONNECTOR =
   "child-item before:content-[''] before:absolute before:start-0 before:w-0.5 before:h-full before:bg-n-slate-4 first:before:rounded-t last:before:h-1/5 last:after:content-[''] last:after:absolute last:after:start-0 last:after:bottom-[calc(50%_-_2px)] last:after:h-3 last:after:w-2.5 last:after:border-b-2 last:after:border-s-2 last:after:rounded-es last:after:border-n-slate-4";
+
+// Tono más claro del color heredado del grupo (35% del color original,
+// mezclado con blanco). Si el grupo no definió color, cae en "currentColor"
+// (el color normal de texto), sin romper nada.
+const LEAF_ICON_COLOR =
+  'text-[color-mix(in_srgb,var(--sidebar-group-color,currentColor)_35%,white)]';
 </script>
 
 <template>
@@ -55,7 +61,11 @@ const TREE_CONNECTOR =
         v-bind="{ label, icon, active, badgeCount }"
       />
       <template v-else>
-        <span v-if="icon" class="size-4 grid place-content-center rounded-full">
+        <span
+          v-if="icon"
+          class="size-4 grid place-content-center rounded-full"
+          :class="LEAF_ICON_COLOR"
+        >
           <Icon :icon="icon" class="size-4 inline-block" />
         </span>
         <div class="flex-1 truncate min-w-0 text-sm">{{ label }}</div>
