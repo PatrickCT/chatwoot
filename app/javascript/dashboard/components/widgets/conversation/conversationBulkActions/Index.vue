@@ -1,24 +1,24 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, useAttrs } from 'vue';
-import { useMapGetter } from 'dashboard/composables/store.js';
-import { getUnixTime } from 'date-fns';
-import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
-import { emitter } from 'shared/helpers/mitt';
 import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions.js';
+import { useMapGetter } from 'dashboard/composables/store.js';
 import wootConstants from 'dashboard/constants/globals';
 import {
-  CMD_BULK_ACTION_SNOOZE_CONVERSATION,
   CMD_BULK_ACTION_REOPEN_CONVERSATION,
   CMD_BULK_ACTION_RESOLVE_CONVERSATION,
+  CMD_BULK_ACTION_SNOOZE_CONVERSATION,
 } from 'dashboard/helper/commandbar/events';
+import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
+import { getUnixTime } from 'date-fns';
+import { emitter } from 'shared/helpers/mitt';
+import { computed, onMounted, onUnmounted, ref, useAttrs } from 'vue';
 
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
+import CustomSnoozeModal from 'dashboard/components/CustomSnoozeModal.vue';
 import BulkAgentActions from './BulkAgentActions.vue';
-import BulkUpdateActions from './BulkUpdateActions.vue';
 import BulkLabelActions from './BulkLabelActions.vue';
 import BulkTeamActions from './BulkTeamActions.vue';
-import CustomSnoozeModal from 'dashboard/components/CustomSnoozeModal.vue';
+import BulkUpdateActions from './BulkUpdateActions.vue';
 
 const props = defineProps({
   conversations: {
@@ -136,10 +136,18 @@ onUnmounted(() => {
     leave-from-class="opacity-100 scale-100 translate-y-0"
     leave-to-class="opacity-0 scale-95 translate-y-2"
   >
+    <!--
+      OJO: no agregar "left-1/2 -translate-x-1/2" acá — como el contenedor
+      ya usa w-full, ese transform no cambia nada visualmente (matemáticamente
+      da lo mismo que no ponerlo), pero SÍ crea un contexto de apilamiento
+      nuevo que atrapa a los dropdowns de bulk actions (BulkAgentActions,
+      BulkTeamActions, etc.) por debajo del sidebar, sin que ningún z-index
+      interno pueda arreglarlo. Se sacó a propósito, no es un olvido.
+    -->
     <div
       v-if="conversations.length > 0"
       v-bind="attrs"
-      class="px-2 absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 w-full origin-bottom"
+      class="px-2 absolute bottom-20 sm:bottom-4 z-30 w-full origin-bottom"
     >
       <div
         v-if="allConversationsSelected"
