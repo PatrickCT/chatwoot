@@ -140,14 +140,19 @@ onUnmounted(() => {
       OJO: no agregar "left-1/2 -translate-x-1/2" acá — como el contenedor
       ya usa w-full, ese transform no cambia nada visualmente (matemáticamente
       da lo mismo que no ponerlo), pero SÍ crea un contexto de apilamiento
-      nuevo que atrapa a los dropdowns de bulk actions (BulkAgentActions,
-      BulkTeamActions, etc.) por debajo del sidebar, sin que ningún z-index
-      interno pueda arreglarlo. Se sacó a propósito, no es un olvido.
+      nuevo. No es la causa principal del problema del z-index (ver nota de
+      z-50 abajo), pero mejor no reintroducirlo.
+
+      OJO 2 — la causa REAL de que este menú apareciera detrás del sidebar:
+      Sidebar.vue tiene z-40 fijo. Esta barra tenía z-30, así que SIEMPRE
+      iba a perder contra el sidebar sin importar nada más — no hacía falta
+      ningún problema de contexto de apilamiento para explicarlo, era
+      simplemente z-30 < z-40. Por eso ahora es z-50.
     -->
     <div
       v-if="conversations.length > 0"
       v-bind="attrs"
-      class="px-2 absolute bottom-20 sm:bottom-4 z-30 w-full origin-bottom"
+      class="px-2 absolute bottom-20 sm:bottom-4 z-50 w-full origin-bottom"
     >
       <div
         v-if="allConversationsSelected"
