@@ -1,202 +1,222 @@
 <script setup>
-import { useTemplateRef, computed, ref } from 'vue';
-import { useI18n, I18nT } from 'vue-i18n';
-import { useToggle } from '@vueuse/core';
-import { vOnClickOutside } from '@vueuse/components';
-import { useStore } from 'vuex';
-import { useMapGetter } from 'dashboard/composables/store';
+import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions.js';
+import { useMapGetter } from 'dashboard/composables/store.js';
+import wootConstants from 'dashboard/constants/globals';
+import {
+  CMD_BULK_ACTION_REOPEN_CONVERSATION,
+  CMD_BULK_ACTION_RESOLVE_CONVERSATION,
+  CMD_BULK_ACTION_SNOOZE_CONVERSATION,
+} from 'dashboard/helper/commandbar/events';
+import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
+import { getUnixTime } from 'date-fns';
+import { emitter } from 'shared/helpers/mitt';
+import { computed, onMounted, onUnmounted, ref, useAttrs } from 'vue';
 
-import Button from 'dashboard/components-next/button/Button.vue';
-import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
+import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
+import CustomSnoozeModal from 'dashboard/components/CustomSnoozeModal.vue';
+import BulkAgentActions from './BulkAgentActions.vue';
+import BulkLabelActions from './BulkLabelActions.vue';
+import BulkTeamActions from './BulkTeamActions.vue';
+import BulkUpdateActions from './BulkUpdateActions.vue';
 
 const props = defineProps({
+  conversations: {
+    type: Array,
+    default: () => [],
+  },
+  allConversationsSelected: {
+    type: Boolean,
+    default: false,
+  },
   selectedInboxes: {
     type: Array,
     default: () => [],
   },
-  conversationCount: {
-    type: Number,
-    default: 0,
+  showOpenAction: {
+    type: Boolean,
+    default: false,
+  },
+  showResolvedAction: {
+    type: Boolean,
+    default: false,
+  },
+  showSnoozedAction: {
+    type: Boolean,
+    default: false,
   },
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(['selectAllConversations']);
 
-const { t } = useI18n();
-const store = useStore();
-
-const containerRef = useTemplateRef('containerRef');
-const [showDropdown, toggleDropdown] = useToggle(false);
-const selectedAgent = ref(null);
-
-const assignableAgentsUiFlags = useMapGetter(
-  'inboxAssignableAgents/getUIFlags'
-);
-const bulkActionsUiFlags = useMapGetter('bulkActions/getUIFlags');
-
-const isLoading = computed(() => assignableAgentsUiFlags.value.isFetching);
-const isUpdating = computed(() => bulkActionsUiFlags.value.isUpdating);
-
-const assignableAgentsList = useMapGetter(
-  'inboxAssignableAgents/getAssignableAgents'
-);
-const assignableAgents = computed(() =>
-  assignableAgentsList.value(props.selectedInboxes.join(','))
-);
-
-const agentMenuItems = computed(() => {
-  const items = [
-    {
-      action: 'select',
-      value: 'none',
-      label: t('BULK_ACTION.NONE'),
-      thumbnail: {
-        name: t('BULK_ACTION.NONE'),
-        src: '',
-      },
-      isSelected: selectedAgent.value?.id === null,
-    },
-  ];
-
-  assignableAgents.value.forEach(agent => {
-    items.push({
-      action: 'select',
-      value: agent.id,
-      label: agent.name,
-      thumbnail: {
-        name: agent.name,
-        src: agent.thumbnail,
-      },
-      isSelected: selectedAgent.value?.id === agent.id,
-    });
-  });
-
-  return items;
+defineOptions({
+  inheritAttrs: false,
 });
 
-const handleSelectAgent = item => {
-  if (item.value === 'none') {
-    selectedAgent.value = { id: null, name: t('BULK_ACTION.NONE') };
+const attrs = useAttrs();
+
+const {
+  selectedConversations,
+  onAssignAgent,
+  onAssignLabels,
+  onRemoveLabels,
+  onAssignTeamsForBulk: onAssignTeam,
+  onUpdateConversations,
+} = useBulkActions();
+
+const getConversationById = useMapGetter('getConversationById');
+
+const appliedLabelsForSelection = computed(() => {
+  const applied = new Set();
+  selectedConversations.value.forEach(id => {
+    const conversation = getConversationById.value(id);
+    (conversation?.labels || []).forEach(label => applied.add(label));
+  });
+  return Array.from(applied);
+});
+
+const showCustomTimeSnoozeModal = ref(false);
+
+function onCmdSnoozeConversation(snoozeType) {
+  if (snoozeType === wootConstants.SNOOZE_OPTIONS.UNTIL_CUSTOM_TIME) {
+    showCustomTimeSnoozeModal.value = true;
+  } else if (typeof snoozeType === 'number') {
+    onUpdateConversations('snoozed', snoozeType);
   } else {
-    const agent = assignableAgents.value.find(a => a.id === item.value);
-    selectedAgent.value = agent || { id: null, name: t('BULK_ACTION.NONE') };
+    onUpdateConversations('snoozed', findSnoozeTime(snoozeType) || null);
   }
-};
+}
 
-const handleAssign = () => {
-  if (isUpdating.value) return;
-  emit('select', selectedAgent.value);
-  selectedAgent.value = null;
-  toggleDropdown(false);
-};
+function onCmdReopenConversation() {
+  onUpdateConversations('open', null);
+}
 
-const handleCancel = () => {
-  selectedAgent.value = null;
-};
+function onCmdResolveConversation() {
+  onUpdateConversations('resolved', null);
+}
 
-const handleDismiss = () => {
-  selectedAgent.value = null;
-  toggleDropdown(false);
-};
-
-const handleToggleDropdown = () => {
-  const willOpen = !showDropdown.value;
-  toggleDropdown();
-
-  // Fetch agents only when opening the dropdown
-  if (willOpen && props.selectedInboxes.length > 0) {
-    store.dispatch('inboxAssignableAgents/fetch', props.selectedInboxes);
+function customSnoozeTime(customSnoozedTime) {
+  showCustomTimeSnoozeModal.value = false;
+  if (customSnoozedTime) {
+    onUpdateConversations('snoozed', getUnixTime(customSnoozedTime));
   }
-};
+}
+
+function hideCustomSnoozeModal() {
+  showCustomTimeSnoozeModal.value = false;
+}
+
+// Computed property with getter/setter to enable v-model usage
+const allSelected = computed({
+  get: () => props.allConversationsSelected,
+  set: value => {
+    emit('selectAllConversations', value);
+  },
+});
+
+onMounted(() => {
+  emitter.on(CMD_BULK_ACTION_SNOOZE_CONVERSATION, onCmdSnoozeConversation);
+  emitter.on(CMD_BULK_ACTION_REOPEN_CONVERSATION, onCmdReopenConversation);
+  emitter.on(CMD_BULK_ACTION_RESOLVE_CONVERSATION, onCmdResolveConversation);
+});
+
+onUnmounted(() => {
+  emitter.off(CMD_BULK_ACTION_SNOOZE_CONVERSATION, onCmdSnoozeConversation);
+  emitter.off(CMD_BULK_ACTION_REOPEN_CONVERSATION, onCmdReopenConversation);
+  emitter.off(CMD_BULK_ACTION_RESOLVE_CONVERSATION, onCmdResolveConversation);
+});
 </script>
 
 <template>
-  <div ref="containerRef" class="relative">
-    <Button
-      v-tooltip="$t('BULK_ACTION.ASSIGN_AGENT_TOOLTIP')"
-      icon="i-lucide-user-round-check"
-      slate
-      xs
-      ghost
-      :class="{ 'bg-n-alpha-2': showDropdown }"
-      @click="handleToggleDropdown"
-    />
-    <Transition
-      enter-active-class="transition-all duration-150 ease-out origin-bottom"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition-all duration-100 ease-in origin-bottom"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+  <Transition
+    enter-active-class="transition-all duration-200 ease-out origin-bottom"
+    enter-from-class="opacity-0 scale-95 translate-y-2"
+    enter-to-class="opacity-100 scale-100 translate-y-0"
+    leave-active-class="transition-all duration-150 ease-in origin-bottom"
+    leave-from-class="opacity-100 scale-100 translate-y-0"
+    leave-to-class="opacity-0 scale-95 translate-y-2"
+  >
+    <!--
+      OJO: no agregar "left-1/2 -translate-x-1/2" acá — como el contenedor
+      ya usa w-full, ese transform no cambia nada visualmente (matemáticamente
+      da lo mismo que no ponerlo), pero SÍ crea un contexto de apilamiento
+      nuevo que atrapa a los dropdowns de bulk actions (BulkAgentActions,
+      BulkTeamActions, etc.) por debajo del sidebar, sin que ningún z-index
+      interno pueda arreglarlo. Se sacó a propósito, no es un olvido.
+    -->
+    <div
+      v-if="conversations.length > 0"
+      v-bind="attrs"
+      class="px-2 absolute bottom-20 sm:bottom-4 z-30 w-full origin-bottom"
     >
-      <DropdownMenu
-        v-if="showDropdown"
-        v-on-click-outside="[handleDismiss, { ignore: [containerRef] }]"
-        :menu-items="agentMenuItems"
-        :is-loading="isLoading"
-        show-search
-        :search-placeholder="t('BULK_ACTION.SEARCH_INPUT_PLACEHOLDER')"
-        class="ltr:-right-10 rtl:-left-10 ltr:2xl:right-0 rtl:2xl:left-0 bottom-8 w-60 max-h-80"
-        @action="handleSelectAgent"
+      <div
+        v-if="allConversationsSelected"
+        class="bg-n-amber-2 outline -outline-offset-1 outline-1 outline-n-amber-5 rounded-lg text-sm mb-2 py-1.5 px-2 text-n-amber-text"
       >
-        <template v-if="selectedAgent" #footer>
-          <div
-            class="pt-2 pb-2 px-2 border-t border-n-weak sticky bottom-0 rounded-b-md z-20 bg-n-alpha-3 backdrop-blur-[4px]"
-          >
-            <div class="flex flex-col gap-2">
-              <I18nT
-                v-if="selectedAgent.id"
-                keypath="BULK_ACTION.ASSIGN_AGENT_CONFIRMATION_LABEL"
-                tag="p"
-                class="text-xs text-n-slate-11 px-1 mb-0"
-                :plural="props.conversationCount"
-              >
-                <template #n>
-                  <strong class="text-n-slate-12">
-                    {{ props.conversationCount }}
-                  </strong>
-                </template>
-                <template #agentName>
-                  <strong class="text-n-slate-12">
-                    {{ selectedAgent.name }}
-                  </strong>
-                </template>
-              </I18nT>
-              <I18nT
-                v-else
-                keypath="BULK_ACTION.UNASSIGN_AGENT_CONFIRMATION_LABEL"
-                tag="p"
-                class="text-xs text-n-slate-11 px-1 mb-0"
-                :plural="props.conversationCount"
-              >
-                <template #n>
-                  <strong class="text-n-slate-12">
-                    {{ props.conversationCount }}
-                  </strong>
-                </template>
-              </I18nT>
-              <div class="flex gap-2">
-                <Button
-                  sm
-                  faded
-                  slate
-                  class="flex-1"
-                  :label="t('BULK_ACTION.CANCEL')"
-                  @click="handleCancel"
-                />
-                <Button
-                  sm
-                  class="flex-1"
-                  :label="t('BULK_ACTION.YES')"
-                  :disabled="isUpdating"
-                  :is-loading="isUpdating"
-                  @click="handleAssign"
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-      </DropdownMenu>
-    </Transition>
-  </div>
+        {{ $t('BULK_ACTION.ALL_CONVERSATIONS_SELECTED_ALERT') }}
+      </div>
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
+      >
+        <div
+          class="ltr:ml-0.5 rtl:mr-0.5 flex items-center gap-1 flex-wrap min-w-0"
+        >
+          <label class="cursor-pointer flex items-center gap-1.5">
+            <Checkbox
+              v-model="allSelected"
+              :indeterminate="!allConversationsSelected"
+            />
+            <span class="cursor-pointer">
+              {{
+                $t('BULK_ACTION.CONVERSATIONS_SELECTED', {
+                  conversationCount: conversations.length,
+                })
+              }}
+            </span>
+          </label>
+          <div class="w-px h-3 bg-n-weak rounded-lg ltr:ml-1 rtl:mr-1" />
+          <NextButton
+            v-tooltip="$t('BULK_ACTION.CLEAR_SELECTION')"
+            :label="$t('BULK_ACTION.CLEAR_SELECTION')"
+            ghost
+            class="!text-n-blue-11 !px-1 !h-6 whitespace-nowrap"
+            sm
+            @click="allSelected = false"
+          />
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <BulkLabelActions @assign="onAssignLabels" />
+          <BulkLabelActions
+            action="remove"
+            :applied-labels="appliedLabelsForSelection"
+            @remove="onRemoveLabels"
+          />
+          <BulkUpdateActions
+            :show-resolve="!showResolvedAction"
+            :show-reopen="!showOpenAction"
+            :show-snooze="!showSnoozedAction"
+            @update="onUpdateConversations"
+          />
+          <BulkAgentActions
+            :selected-inboxes="selectedInboxes"
+            :conversation-count="conversations.length"
+            @select="onAssignAgent"
+          />
+          <BulkTeamActions
+            :conversation-count="conversations.length"
+            @select="onAssignTeam"
+          />
+        </div>
+      </div>
+    </div>
+  </Transition>
+  <woot-modal
+    v-model:show="showCustomTimeSnoozeModal"
+    :on-close="hideCustomSnoozeModal"
+  >
+    <CustomSnoozeModal
+      @close="hideCustomSnoozeModal"
+      @choose-time="customSnoozeTime"
+    />
+  </woot-modal>
 </template>
