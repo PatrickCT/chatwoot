@@ -1,4 +1,13 @@
 <script setup>
+<<<<<<< HEAD
+=======
+import { ref, computed, onMounted, onUnmounted, useAttrs } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useMapGetter } from 'dashboard/composables/store.js';
+import { getUnixTime } from 'date-fns';
+import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
+import { emitter } from 'shared/helpers/mitt';
+>>>>>>> v4.17.0
 import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions.js';
 import { useMapGetter } from 'dashboard/composables/store.js';
 import wootConstants from 'dashboard/constants/globals';
@@ -54,6 +63,7 @@ defineOptions({
 });
 
 const attrs = useAttrs();
+const { t } = useI18n();
 
 const {
   selectedConversations,
@@ -74,6 +84,12 @@ const appliedLabelsForSelection = computed(() => {
   });
   return Array.from(applied);
 });
+
+const selectedLabel = computed(() =>
+  t('BULK_ACTION.CONVERSATIONS_SELECTED', {
+    conversationCount: props.conversations.length,
+  })
+);
 
 const showCustomTimeSnoozeModal = ref(false);
 
@@ -161,35 +177,47 @@ onUnmounted(() => {
         {{ $t('BULK_ACTION.ALL_CONVERSATIONS_SELECTED_ALERT') }}
       </div>
       <div
+<<<<<<< HEAD
         class="flex flex-wrap items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
       >
         <div
           class="ltr:ml-0.5 rtl:mr-0.5 flex items-center gap-1 flex-wrap min-w-0"
         >
           <label class="cursor-pointer flex items-center gap-1.5">
+=======
+        class="flex items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
+      >
+        <div class="ms-0.5 flex items-center gap-1 min-w-0">
+          <label class="cursor-pointer flex items-center gap-1.5 min-w-0">
+>>>>>>> v4.17.0
             <Checkbox
               v-model="allSelected"
               :indeterminate="!allConversationsSelected"
+              class="flex-shrink-0"
             />
-            <span class="cursor-pointer">
-              {{
-                $t('BULK_ACTION.CONVERSATIONS_SELECTED', {
-                  conversationCount: conversations.length,
-                })
-              }}
+            <span :title="selectedLabel" class="cursor-pointer truncate">
+              {{ selectedLabel }}
             </span>
           </label>
-          <div class="w-px h-3 bg-n-weak rounded-lg ltr:ml-1 rtl:mr-1" />
+          <div class="w-px h-3 bg-n-weak rounded-lg ms-1 flex-shrink-0" />
           <NextButton
             v-tooltip="$t('BULK_ACTION.CLEAR_SELECTION')"
             :label="$t('BULK_ACTION.CLEAR_SELECTION')"
             ghost
+<<<<<<< HEAD
             class="!text-n-blue-11 !px-1 !h-6 whitespace-nowrap"
+=======
+            class="!text-n-blue-11 !px-1 !h-6 flex-shrink-0"
+>>>>>>> v4.17.0
             sm
             @click="allSelected = false"
           />
         </div>
+<<<<<<< HEAD
         <div class="flex items-center gap-2 flex-wrap">
+=======
+        <div class="flex items-center gap-2 flex-shrink-0">
+>>>>>>> v4.17.0
           <BulkLabelActions @assign="onAssignLabels" />
           <BulkLabelActions
             action="remove"
