@@ -1,13 +1,4 @@
 <script setup>
-<<<<<<< HEAD
-=======
-import { ref, computed, onMounted, onUnmounted, useAttrs } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useMapGetter } from 'dashboard/composables/store.js';
-import { getUnixTime } from 'date-fns';
-import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
-import { emitter } from 'shared/helpers/mitt';
->>>>>>> v4.17.0
 import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions.js';
 import { useMapGetter } from 'dashboard/composables/store.js';
 import wootConstants from 'dashboard/constants/globals';
@@ -20,6 +11,7 @@ import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
 import { getUnixTime } from 'date-fns';
 import { emitter } from 'shared/helpers/mitt';
 import { computed, onMounted, onUnmounted, ref, useAttrs } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
@@ -153,17 +145,18 @@ onUnmounted(() => {
     leave-to-class="opacity-0 scale-95 translate-y-2"
   >
     <!--
-      OJO: no agregar "left-1/2 -translate-x-1/2" acá — como el contenedor
-      ya usa w-full, ese transform no cambia nada visualmente (matemáticamente
-      da lo mismo que no ponerlo), pero SÍ crea un contexto de apilamiento
-      nuevo. No es la causa principal del problema del z-index (ver nota de
-      z-50 abajo), pero mejor no reintroducirlo.
+      Nota histórica: en su momento este contenedor tuvo un fix propio de
+      "left-1/2 -translate-x-1/2" + z-index bajo que causaba que el menú
+      quedara atrapado detrás del sidebar (ver commit del fix original).
+      Ya no aplica — z-50 resuelve la prioridad de apilamiento sobre el
+      sidebar (que usa z-40 fijo en Sidebar.vue).
 
-      OJO 2 — la causa REAL de que este menú apareciera detrás del sidebar:
-      Sidebar.vue tiene z-40 fijo. Esta barra tenía z-30, así que SIEMPRE
-      iba a perder contra el sidebar sin importar nada más — no hacía falta
-      ningún problema de contexto de apilamiento para explicarlo, era
-      simplemente z-30 < z-40. Por eso ahora es z-50.
+      Sobre el overflow de los botones en pantallas angostas: la versión
+      oficial de Chatwoot (a partir de v4.17.0) resolvió esto truncando el
+      texto de "N conversaciones seleccionadas" (min-w-0 + truncate) en vez
+      de usar flex-wrap para saltar a una segunda línea — se adoptó esa
+      solución oficial en el merge de v4.17.0 en vez de mantener el
+      flex-wrap propio.
     -->
     <div
       v-if="conversations.length > 0"
@@ -177,19 +170,10 @@ onUnmounted(() => {
         {{ $t('BULK_ACTION.ALL_CONVERSATIONS_SELECTED_ALERT') }}
       </div>
       <div
-<<<<<<< HEAD
-        class="flex flex-wrap items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
-      >
-        <div
-          class="ltr:ml-0.5 rtl:mr-0.5 flex items-center gap-1 flex-wrap min-w-0"
-        >
-          <label class="cursor-pointer flex items-center gap-1.5">
-=======
         class="flex items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
       >
         <div class="ms-0.5 flex items-center gap-1 min-w-0">
           <label class="cursor-pointer flex items-center gap-1.5 min-w-0">
->>>>>>> v4.17.0
             <Checkbox
               v-model="allSelected"
               :indeterminate="!allConversationsSelected"
@@ -204,20 +188,12 @@ onUnmounted(() => {
             v-tooltip="$t('BULK_ACTION.CLEAR_SELECTION')"
             :label="$t('BULK_ACTION.CLEAR_SELECTION')"
             ghost
-<<<<<<< HEAD
-            class="!text-n-blue-11 !px-1 !h-6 whitespace-nowrap"
-=======
             class="!text-n-blue-11 !px-1 !h-6 flex-shrink-0"
->>>>>>> v4.17.0
             sm
             @click="allSelected = false"
           />
         </div>
-<<<<<<< HEAD
-        <div class="flex items-center gap-2 flex-wrap">
-=======
         <div class="flex items-center gap-2 flex-shrink-0">
->>>>>>> v4.17.0
           <BulkLabelActions @assign="onAssignLabels" />
           <BulkLabelActions
             action="remove"
